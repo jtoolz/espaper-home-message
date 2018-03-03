@@ -59,8 +59,6 @@ See more at https://blog.squix.org
 #define MINI_BLACK 0
 #define MINI_WHITE 1
 
-#define MAX_FORECASTS 12
-
 // defines the colors usable in the paletted 16 color frame buffer
 uint16_t palette[] = {ILI9341_BLACK, // 0
                       ILI9341_WHITE, // 1
@@ -76,6 +74,7 @@ MiniGrafx gfx = MiniGrafx(&epd, BITS_PER_PIXEL, palette);
 
 HomeMsgFields message;
 
+String months[12] = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
 // Setup simpleDSTadjust Library rules
 simpleDSTadjust dstAdjusted(StartRule, EndRule);
 
@@ -83,13 +82,6 @@ void updateData();
 void drawProgress(uint8_t percentage, String text);
 void drawTime();
 void drawButtons();
-#if 0
-void drawCurrentWeather();
-void drawForecast();
-void drawForecastDetail(uint16_t x, uint16_t y, uint8_t dayIndex);
-void drawAstronomy();
-void drawCurrentWeatherDetail();
-#endif
 void drawLabelValue(uint8_t line, String label, String value);
 void drawBattery();
 String getMeteoconIcon(String iconText);
@@ -164,9 +156,6 @@ void setup() {
       drawTime();
       drawBattery();
       drawMessage();
-      //drawCurrentWeather();
-      //drawForecast();
-      //drawAstronomy();
       drawButtons();
       gfx.commit();
     } else {
@@ -252,6 +241,8 @@ void drawTime() {
 
 // draws current weather information
 void drawMessage() {
+  String str_year, str_month, str_day;
+
   // gfx.setColor(MINI_BLACK);
   //gfx.drawXbm(1, 16, 50, 50, RoundBox_bits);
   //gfx.setColor(MINI_WHITE);
@@ -263,95 +254,28 @@ void drawMessage() {
 
   // Draw sender name
   gfx.setColor(MINI_BLACK);
-  gfx.setFont(ArialMT_Plain_10);
+  gfx.setFont(ArialMT_Plain_16);
   gfx.setTextAlignment(TEXT_ALIGN_LEFT);
   gfx.drawString(5, 15, "From: " + message.senderName);
 
   // Draw message text
   gfx.setFont(ArialMT_Plain_24);
   gfx.setTextAlignment(TEXT_ALIGN_LEFT);
-  gfx.drawString(5, 25, message.content);
+  //gfx.drawString(5, 25, message.content);
+  gfx.drawStringMaxWidth(5, 35, 285, message.content);
 
   // Draw date/time created
-  gfx.setFont(ArialMT_Plain_10);
+  gfx.setFont(ArialMT_Plain_16);
   gfx.setTextAlignment(TEXT_ALIGN_LEFT);
-  gfx.drawString(5, 50, message.created);
+
+  
+  str_year = message.created.substring(0,4);
+  str_month = message.created.substring(5,7);
+  str_day = message.created.substring(8,10);
+  gfx.drawString(5, 95, months[str_month.toInt()-1] + " " + str_day + ", " + str_year);
   // gfx.drawLine(0, 65, SCREEN_WIDTH, 65);
 }
 
-#if 0
-void drawForecast() {
-  drawForecastDetail(SCREEN_WIDTH / 2 - 20, 15, 3);
-  drawForecastDetail(SCREEN_WIDTH / 2 + 22, 15, 6);
-  drawForecastDetail(SCREEN_WIDTH / 2 + 64, 15, 9);
-  drawForecastDetail(SCREEN_WIDTH / 2 + 106, 15, 12);
-}
-
-// helper for the forecast columns
-void drawForecastDetail(uint16_t x, uint16_t y, uint8_t index) {
-
-  gfx.setFont(ArialMT_Plain_10);
-  gfx.setTextAlignment(TEXT_ALIGN_CENTER);
-  String hour = hourlies[index].hour;
-  hour.toUpperCase();
-  gfx.drawString(x + 25, y - 2, hour);
-
-  gfx.setColor(MINI_BLACK);
-  gfx.drawString(x + 25, y + 12, hourlies[index].temp + "° " + hourlies[index].PoP + "%");
-
-  gfx.setFont(Meteocons_Plain_21);
-  String weatherIcon = getMeteoconIcon(hourlies[index].icon);
-  gfx.drawString(x + 25, y + 24, weatherIcon);
-  gfx.drawLine(x + 2, 12, x + 2, 65);
-  gfx.drawLine(x + 2, 25, x + 43, 25);
-
-
-}
-
-// draw moonphase and sunrise/set and moonrise/set
-void drawAstronomy() {
-  gfx.setFont(MoonPhases_Regular_36);
-  gfx.setColor(MINI_BLACK);
-  gfx.setTextAlignment(TEXT_ALIGN_LEFT);
-  gfx.drawString(5, 72, moonAgeImage);
-
-  gfx.setFont(ArialMT_Plain_10);
-  gfx.drawString(55, 72, FPSTR(TEXT_SUN));
-  gfx.drawString(95, 72,  astronomy.sunriseTime + " - " + astronomy.sunsetTime);
-  gfx.drawString(55, 84, FPSTR(TEXT_MOON));
-  gfx.drawString(95, 84, astronomy.moonriseTime + " - " + astronomy.moonsetTime);
-  gfx.drawString(55, 96, FPSTR(TEXT_PHASE));
-  gfx.drawString(95, 96, astronomy.moonPhase);
-}
-
-void drawCurrentWeatherDetail() {
-  gfx.setFont(ArialRoundedMTBold_14);
-  gfx.setTextAlignment(TEXT_ALIGN_CENTER);
-  gfx.setColor(MINI_WHITE);
-  gfx.drawString(120, 2, "Current Conditions");
-
-  String degreeSign = "°F";
-  if (IS_METRIC) {
-    degreeSign = "°C";
-  }
-
-  drawLabelValue(0, "Temperature:", conditions.currentTemp + degreeSign);
-  drawLabelValue(1, "Feels Like:", conditions.feelslike + degreeSign);
-  drawLabelValue(2, "Dew Point:", conditions.dewPoint + degreeSign);
-  drawLabelValue(3, "Wind Speed:", conditions.windSpeed);
-  drawLabelValue(4, "Wind Dir:", conditions.windDir);
-  drawLabelValue(5, "Humidity:", conditions.humidity);
-  drawLabelValue(6, "Pressure:", conditions.pressure);
-  drawLabelValue(7, "Precipitation:", conditions.precipitationToday);
-  drawLabelValue(8, "UV:", conditions.UV);
-
-  gfx.setTextAlignment(TEXT_ALIGN_LEFT);
-  gfx.setColor(MINI_WHITE);
-  gfx.drawString(15, 185, "Description: ");
-  gfx.setColor(MINI_WHITE);
-  //gfx.drawStringMaxWidth(15, 200, 240 - 2 * 15, forecasts[0].forecastText);
-}
-#endif
 
 void drawLabelValue(uint8_t line, String label, String value) {
   const uint8_t labelX = 15;

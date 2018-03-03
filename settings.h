@@ -31,7 +31,7 @@ const String CONFIG_SSID = "ESPaperConfig";
 String WIFI_SSID = "poochnet-bgn";
 String WIFI_PASS = "6f0243d3a8";
 
-const int UPDATE_INTERVAL_SECS = 20 * 60; // Update every 10 minutes
+const int UPDATE_INTERVAL_SECS = 30 * 60; // Update every 30 minutes
 
 /*
  * BUSY---->gpio4 
